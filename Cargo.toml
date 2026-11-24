@@ -1,0 +1,12 @@
+[package]
+name = "fewnomial-3t-4-certifier"
+version = "1.0.0"
+edition = "2024"
+authors = ["Ivan Besevic <b.ivan.fr@gmail.com>"]
+license = "MIT"
+description = "Certified verification of the degree-45 bivariate (3,4) fewnomial system with 8 strictly positive roots (S(3,t) >= 3t - 4)"
+
+[dependencies]
+pandsysroots = "0.33.0"
+num-bigint = "0.4"
+num-traits = "0.2"

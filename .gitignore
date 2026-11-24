@@ -1,0 +1,8 @@
+/target
+/lean/.lake
+.DS_Store
+__pycache__/
+*.pyc
+*.aux
+*.log
+*.out

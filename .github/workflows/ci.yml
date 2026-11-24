@@ -1,0 +1,92 @@
+name: Formal & Computational Verification
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lean-verification:
+    name: Lean 4.36.0 Formal Proofs & Axiom Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install elan (Lean version manager)
+        run: |
+          curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Mathlib & Lake packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            lean/.lake/packages
+            lean/.lake/build
+          key: lean-${{ runner.os }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json', 'lean/lakefile.toml') }}
+          restore-keys: |
+            lean-${{ runner.os }}-
+
+      - name: Fetch prebuilt Mathlib cache
+        working-directory: lean
+        run: |
+          lean --version
+          lake exe cache get
+
+      - name: Build Lean 4.36.0 theorems (Deg45 + InfiniteTheorem)
+        working-directory: lean
+        run: lake build Fewnomial
+
+      - name: Audit exact Lean kernel axioms & forbid sorry/admit/native_decide
+        working-directory: lean
+        run: |
+          set -euo pipefail
+          OUT=$(lake env lean Fewnomial/Audit.lean 2>&1)
+          echo "$OUT"
+          echo "$OUT" | grep -Fq "'Fewnomial.Deg45.explicit_deg45_eight_positive_roots' depends on axioms: [propext, Classical.choice, Quot.sound]"
+          echo "$OUT" | grep -Fq "'Fewnomial.InfiniteTheorem.fewnomial_lower_bound_3t_minus_4' depends on axioms: [propext, Classical.choice, Quot.sound]"
+          if echo "$OUT" | grep -Eq "sorryAx|ofReduceBool|trustCompiler"; then
+            echo "ERROR: Forbidden axiom detected!"
+            exit 1
+          fi
+          echo "PASS: Both theorems certified with standard axioms [propext, Classical.choice, Quot.sound] only."
+
+  rust-verification:
+    name: Rust Exact BigInt IVT + pandsysroots v0.33.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Pillars 1 & 2 (BigInt IVT + pandsysroots 360/360)
+        run: cargo run --release
+
+  python-mpmath-verification:
+    name: Python 200-Digit mpmath Verification (t = 4, 5, 6)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install mpmath
+        run: pip install mpmath
+
+      - name: Run Pillar 3 (200-digit mpmath)
+        run: python3 verify_records.py

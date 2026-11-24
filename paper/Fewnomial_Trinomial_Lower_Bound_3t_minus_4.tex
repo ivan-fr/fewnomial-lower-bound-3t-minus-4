@@ -1,0 +1,408 @@
+\documentclass[11pt,a4paper]{amsart}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  citecolor=blue!60!black,
+  urlcolor=blue!60!black,
+  pdftitle={An Improved Lower Bound S(3,t) >= 3t - 4 for Positive Solutions of Bivariate Trinomial-t-nomial Systems},
+  pdfauthor={Ivan Besevic}
+}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Sfn}{\mathcal{S}}
+
+\title[Improved Lower Bounds $\Sfn(3,t) \ge 3t - 4$ for Fewnomial Systems]{%
+An Improved Lower Bound $\Sfn(3, t) \ge 3t - 4$ for Positive Solutions of Bivariate Trinomial--$t$-nomial Systems and an Explicit Degree-45 Eight-Root Example}
+
+\author{Ivan Besevic}
+\address{Independent Researcher, France}
+\email{b.ivan.fr@gmail.com}
+\date{November 24, 2026 (v1.1.0 — Lean 4.36.0 Machine-Verified Edition)}
+
+\begin{document}
+
+\begin{abstract}
+Let $\Sfn(3, t)$ denote the maximum number of isolated strictly positive real solutions $(x, y) \in \R_{>0}^2$ of a real bivariate polynomial system $f(x, y) = g(x, y) = 0$ where $f$ is a trinomial ($3$ monomials) and $g$ is a $t$-nomial ($t \ge 3$ monomials). In 2007, Gomez, Niles, and Rojas proved the long-standing lower bound $\Sfn(3, t) \ge 2t - 1$ for all $t \ge 3$, while the sharpest known upper bounds for $t \le 9$ are $\Sfn(3, t) \le 3 \cdot 2^{t-2} - 1$ (El Hilany and Tavenas, 2024).
+
+In this note, we prove by an elementary, Sard-free constructive induction that
+\[
+  \Sfn(3, t) \ge 3t - 4 \qquad \text{for every integer } t \ge 3,
+\]
+matching Haas's sharp value $\Sfn(3, 3) = 5$, strictly improving the Gomez--Niles--Rojas lower bound for every $t \ge 4$, and increasing the asymptotic lower-bound slope by $50\%$. Furthermore, we exhibit a remarkably low-degree, symmetric integer system of type $(3, 4)$,
+\[
+  x^8 + y^8 - 1 = 0, \qquad 8x^{45} + 8y^{45} + 35x^3 y^3 - 25xy = 0,
+\]
+with two-digit coefficients and total degree $45$ (less than half the degree $108$ of Haas's classical $5$-root trinomial example), possessing $8$ simple strictly positive roots.
+
+\textbf{Full Machine Verification (v1.1.0):} Both main theorems—the infinite lower-bound theorem $\Sfn(3, t) \ge 3t - 4$ for all $t \ge 3$ (including nondegeneracy $\det J \neq 0$ at every root) and the explicit degree-$45$ eight-root theorem—are formally verified end-to-end in \textbf{Lean~4.36.0} with \texttt{Mathlib4} ($2{,}404$ lines, zero \texttt{sorry}, zero \texttt{native\_decide}, depending solely on the standard Lean axioms \texttt{[propext, Classical.choice, Quot.sound]}). In addition, the explicit degree-$45$ system is independently certified by (i) a zero-float exact arbitrary-precision integer interval IVT proof, (ii) direct two-dimensional certification of all $360/360$ complex roots via \texttt{pandsysroots v0.33.0} ($0.08\text{ s}$), and (iii) $200$-digit verification in \texttt{mpmath} alongside explicit integer records for $(3, 5)$ ($11$ roots) and $(3, 6)$ ($14$ roots).
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+
+Fewnomial theory, initiated by Khovanskii~\cite{Khovanskii91}, seeks upper and lower bounds on the number of nondegenerate positive real solutions in $\R_{>0}^n$ of sparse polynomial systems purely in terms of the number of monomial terms, independently of the degrees. A fundamental benchmark in dimension $n = 2$ is the intersection of a \emph{trinomial} curve ($3$ terms) and a \emph{$t$-nomial} curve ($t \ge 3$ terms):
+\begin{equation}\label{eq:system}
+  f(x, y) = 0 \quad (3 \text{ terms}), \qquad g(x, y) = 0 \quad (t \text{ terms}), \qquad (x, y) \in \R_{>0}^2.
+\end{equation}
+Denote by $\Sfn(3, t)$ the supremum of the number of isolated solutions in $\R_{>0}^2$ over all real bivariate systems~\eqref{eq:system} of type $(3, t)$.
+
+For $t = 3$ (two trinomials), Kushnirenko conjectured $\Sfn(3, 3) \le 4$. Haas~\cite{Haas02} disproved this conjecture with an explicit symmetric system of degree $108$ having $5$ positive solutions, and Li, Rojas, and Wang~\cite{LRW03} proved that $\Sfn(3, 3) = 5$ is sharp, alongside the general upper bound $\Sfn(3, t) \le 2^t - 2$. Koiran, Portier, and Tavenas~\cite{KPT15} subsequently established the first polynomial upper bound $\Sfn(3, t) \le \frac{2}{3}t^3 + 5t$ via Wronskians, and El Hilany and Tavenas~\cite{EHT24} refined the exponential bound to $\Sfn(3, t) \le 3 \cdot 2^{t-2} - 1$ using Grothendieck's \emph{dessins d'enfant} and Wronskians, which remains the sharpest known upper bound for $t = 4, \dots, 9$ (giving $\Sfn(3, 4) \le 11$, $\Sfn(3, 5) \le 23$, and $\Sfn(3, 6) \le 47$).
+
+On the lower-bound side, Gomez, Niles, and Rojas~\cite{GNR07} proved in 2007 that $\Sfn(3, t) \ge 2t - 1$ for every $t \ge 3$, constructing in particular the first explicit $(3, 4)$ system with $7$ positive solutions. Despite major advances on upper bounds over the ensuing two decades~\cite{KPT15,EH18,EHT24,Bihan26}, the linear lower bound $2t - 1$ has remained unbeaten for all $t \ge 4$.
+
+In this paper, we improve the lower bound for every $t \ge 4$ to $\Sfn(3, t) \ge 3t - 4$ (Theorem~\ref{thm:main}), construct explicit, machine-certified integer systems for $t = 4, 5, 6$ (Theorem~\ref{thm:deg45} and Proposition~\ref{prop:t5t6}), and present a complete formal verification of both Theorem~\ref{thm:main} and Theorem~\ref{thm:deg45} in Lean~4.36.0 (Section~\ref{sec:lean}). Table~\ref{tab:comparison} summarizes the state of the art.
+
+\begin{table}[h]
+\centering
+\caption{Known lower and upper bounds for $\Sfn(3, t)$ (trinomial + $t$-nomial positive roots in $\R_{>0}^2$).}
+\label{tab:comparison}
+\begin{tabular}{@{}rcccc@{}}
+\toprule
+$t$ & System Type & Gomez--Niles--Rojas (2007) & \textbf{This work ($3t - 4$)} & El Hilany--Tavenas (2024) \\
+\midrule
+$3$ & $(3, 3)$ & $5$ (Haas 2002, sharp) & $\mathbf{5}$ (sharp) & $5$ \\
+$4$ & $(3, 4)$ & $7$ & $\mathbf{8}$ ($+1$) & $11$ \\
+$5$ & $(3, 5)$ & $9$ & $\mathbf{11}$ ($+2$) & $23$ \\
+$6$ & $(3, 6)$ & $11$ & $\mathbf{14}$ ($+3$) & $47$ \\
+$t$ & $(3, t)$ & $2t - 1$ & $\mathbf{3t - 4}$ & $\min\!\big(3\cdot 2^{t-2}-1,\; \tfrac{2}{3}t^3 + 5t\big)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Elementary Sard-Free Proof of $\Sfn(3, t) \ge 3t - 4$}
+
+Consider a trinomial of the form $f(x, y) = x^D + y^D - 1 = 0$ with $D \in \Z_{>0}$. On the positive quadrant $\R_{>0}^2$, the change of variables $u = x^D \in (0, 1)$, $1 - u = y^D \in (0, 1)$ gives a real-analytic diffeomorphism between $\{f = 0\} \cap \R_{>0}^2$ and the open interval $(0, 1)$, under which any $t$-nomial $g(x, y) = \sum_{j=1}^t c_j x^{p_j} y^{q_j}$ pulls back to the $t$-term generalized polynomial
+\begin{equation}\label{eq:Fu}
+  F(u) = \sum_{j=1}^t c_j \, u^{\alpha_j} (1 - u)^{\beta_j}, \qquad \alpha_j = \frac{p_j}{D} \in \Q,\quad \beta_j = \frac{q_j}{D} \in \Q.
+\end{equation}
+Conversely, given any $t$-term function~\eqref{eq:Fu} with pairwise distinct rational exponent pairs $(\alpha_j, \beta_j) \in \Q^2$ and nonzero rational coefficients $c_j \in \Q \setminus \{0\}$, choosing a common integer denominator $D \in \Z_{>0}$ so that $D\alpha_j, D\beta_j \in \Z$, clearing negative exponents via a positive monomial multiplier $x^P y^Q$ ($P, Q \in \Z_{\ge 0}$), and clearing coefficient denominators produces valid integer polynomials $f, g \in \Z[x, y]$ of type $(3, t)$ whose positive roots in $\R_{>0}^2$ biject with the zeros of $F$ in $(0, 1)$.
+
+Moreover, along the curve $x^D + y^D = 1$, differentiating $g(x, y(x)) = C x^P y(x)^Q F(x^D)$ with respect to $x$ (using $y'(x) = -x^{D-1}/y^{D-1}$) yields at any positive root $(x, y) \in \R_{>0}^2$:
+\begin{equation}\label{eq:jac}
+  \det \begin{pmatrix} \partial_x f & \partial_y f \\ \partial_x g & \partial_y g \end{pmatrix}
+  = -D y^{D-1} \frac{d}{dx}\big[g(x, y(x))\big]
+  = -C D^2 x^{D-1} y^{D-1} x^P y^Q F'(x^D).
+\end{equation}
+Hence a zero $u = x^D \in (0, 1)$ of $F$ is simple ($F'(u) \neq 0$) if and only if $(x, y) \in \R_{>0}^2$ is a nondegenerate (isolated) positive solution of $f = g = 0$.
+
+\begin{remark}[Elimination of Sard's Theorem]
+In version~1.0.0 of this note, simplicity of the newly inserted zeros was deduced by invoking Sard's theorem (or countability of critical values) to choose a regular rational parameter $c_{t+1}$. During our Lean~4.36.0 formalization, we observed that strengthening the inductive exponent-gap hypothesis from $\gamma \in (0, 1)$ to $\gamma \in (0, \tfrac{1}{16})$ eliminates Sard's theorem completely: the derivative $\widetilde{F}'(r)$ has an explicit, strict, definite sign ($+$, $-$, $+$) on three disjoint subintervals $(0, u_1)$, $(u_2, u_B)$, $(u_3, u_C)$ for \emph{every} rational $c_{t+1}$ in an explicit open interval. The resulting proof below is wholly elementary and matches our Lean~4.36.0 proof step for step.
+\end{remark}
+
+\begin{lemma}[Sard-Free Boundary-Pole $+3$ Insertion]\label{lem:insert}
+Let $t \ge 2$ and let $F(u) = \sum_{j=1}^t c_j u^{\alpha_j}(1-u)^{\beta_j}$ have pairwise distinct rational exponent pairs $(\alpha_j, \beta_j) \in \Q^2$, nonzero rational coefficients $c_j \in \Q \setminus \{0\}$, and $R$ simple zeros $0 < r_1 < \dots < r_R < 1$ in $(0, 1)$. Assume its two smallest $u$-exponents satisfy
+\[
+  \alpha_1 < \alpha_2 < \alpha_j \quad (\forall\, j \ge 3), \qquad \gamma := \alpha_2 - \alpha_1 \in \Big(0, \frac{1}{16}\Big), \qquad c_1 c_2 < 0.
+\]
+Then there exist $\delta \in \Q \cap (0, \gamma)$, $M \in \Z_{>0}$, and $c_{t+1} \in \Q_{>0}$ such that the $(t+1)$-term function
+\[
+  \widetilde{F}(u) := \operatorname{sgn}(c_1)\, u^{-\alpha_1} F(u) - c_{t+1}\, u^{-\delta}(1-u)^M
+\]
+has pairwise distinct exponent pairs, nonzero rational coefficients, at least $R + 3$ simple zeros in $(0, 1)$, and two smallest $u$-exponents $-\delta < 0$ with gap $\delta \in (0, \tfrac{1}{16})$ and opposite-sign coefficients.
+\end{lemma}
+
+\begin{proof}
+Set $G(u) := \operatorname{sgn}(c_1)\, u^{-\alpha_1} F(u)$, which shares the $R$ simple zeros $0 < r_1 < \dots < r_R < 1$ of $F$ and expands as
+\[
+  G(u) = C_1 (1-u)^{\beta_1} - C_2 u^{\gamma}(1-u)^{\beta_2} + \sum_{j=3}^t \tilde{c}_j u^{\alpha_j - \alpha_1}(1-u)^{\beta_j},
+\]
+with $C_1 = |c_1| > 0$, $C_2 = |c_2| > 0$, and $\alpha_j - \alpha_1 > \gamma > 0$ for all $j \ge 3$. As $u \to 0^+$,
+\[
+  \frac{G(u) - C_1}{u^\gamma} \longrightarrow -C_2, \qquad
+  \frac{G'(u)}{u^{\gamma - 1}} \longrightarrow -\gamma C_2.
+\]
+Put $A := \gamma C_2 / C_1 > 0$. We construct $u_C, M, c_{t+1}, \delta$ in five elementary steps:
+
+\begin{enumerate}
+  \item \emph{Local asymptotic window.} Pick $u_C \in (0, \min(\tfrac{1}{4}, r_1/2))$ small enough that for every $u \in (0, u_C]$,
+  \begin{align}
+    \frac{C_1}{2} \le C_1 - \frac{3}{2} C_2 u^\gamma \le G(u) &\le C_1 - \frac{1}{2} C_2 u^\gamma, \label{eq:G_bounds} \\
+    -\frac{3}{2}\gamma C_2 u^{\gamma - 1} \le G'(u) &\le -\frac{1}{2}\gamma C_2 u^{\gamma - 1}. \label{eq:Gp_bounds}
+  \end{align}
+
+  \item \emph{$C^1$-persistence threshold.} Since $r_1 < \dots < r_R$ are simple zeros of $G \in C^1((0,1))$ in $(u_C, 1)$, there exist pairwise disjoint compact brackets $[a_k, b_k] \subset (u_C, 1)$ around each $r_k$ and a threshold $\varepsilon > 0$ such that any $H \in C^1((0, 1))$ satisfying $|H(u) - G(u)| < \varepsilon$ and $|H'(u) - G'(u)| < \varepsilon$ on $[u_C, 1)$ possesses a simple zero in $(a_k, b_k)$ for every $k = 1, \dots, R$.
+
+  \item \emph{Choice of $M$ and anchors $u_B < u_3 < u_C$.} Define for $M \in \Z_{>0}$ the two explicit anchors
+  \[
+    u_B := \left(\frac{A}{16 M}\right)^{\!1/(1-\gamma)}, \qquad
+    u_3 := \left(\frac{4 A}{M}\right)^{\!1/(1-\gamma)},
+  \]
+  which satisfy $M u_B = \frac{A}{16} u_B^\gamma$ and $M u_3 = 4 A u_3^\gamma$. Since $1 - \gamma > 0$ and $\gamma/(1-\gamma) > 0$, we have $u_3 \to 0$ and $M u_3 \to 0$ as $M \to \infty$, while $(1 - u_C)^M$ decays exponentially. Choose $M \in \Z_{>0}$ large enough that
+  \[
+    u_3 < u_C, \qquad M u_3 \le \frac{1}{2}, \qquad
+    2 C_1 (1 - u_C)^M \left(1 + \frac{1}{u_C} + \frac{M}{1 - u_C}\right) < \varepsilon, \qquad
+    (1 - u_C)^M < \frac{1}{8}.
+  \]
+  For any $u \in \{u_B, u_3\}$, we have $M u \le \frac{1}{2}$ so Bernoulli's inequality gives $(1 - u)^M \ge 1 - M u \ge \frac{1}{2}$ and hence $(1 - u)^{-M} \le 1 + 2 M u$. Using $M u \le 4 A u^\gamma = 4\gamma \frac{C_2}{C_1} u^\gamma$ together with $\gamma < \frac{1}{16}$ (so $8\gamma < \frac{1}{2}$),~\eqref{eq:G_bounds} yields
+  \[
+    G(u)(1 - u)^{-M} \le \Big(C_1 - \frac{1}{2} C_2 u^\gamma\Big)\Big(1 + 8\gamma \frac{C_2}{C_1} u^\gamma\Big)
+    < C_1 - \Big(\frac{1}{2} - 8\gamma\Big) C_2 u^\gamma < C_1.
+  \]
+  Thus $L_{\max} := \max\!\big(G(u_B)(1-u_B)^{-M},\; G(u_3)(1-u_3)^{-M}\big) < C_1$.
+
+  \item \emph{Choice of rational coefficient $c_{t+1}$.} Pick \emph{any} rational $c_{t+1} \in (L_{\max}, C_1) \cap \Q$.
+
+  \item \emph{Choice of rational exponent $\delta$ and anchors $u_1 < u_2 < u_B$.} For $\delta \in \Q \cap (0, \gamma)$, define
+  \[
+    u_1 := \left(\frac{\delta}{6 A}\right)^{\!1/\gamma}, \qquad
+    u_2 := \left(\frac{8 \delta}{A}\right)^{\!1/\gamma}.
+  \]
+  As $\delta \to 0^+$, we have $u_1, u_2 \to 0$, $\delta \log u_j \to 0$ (so $u_j^\delta \to 1$), $G(u_j) \to C_1$, $(1 - u_j)^M \to 1$, and $u_C^{-\delta} \to 1$. Hence for sufficiently small $\delta \in \Q \cap (0, \gamma)$,
+  \[
+    0 < u_1 < u_2 < u_B < u_3 < u_C, \qquad u_C^{-\delta} < 2, \qquad
+    c_{t+1} < G(u_j)\, u_j^\delta (1 - u_j)^{-M} \quad (j \in \{1, 2\}).
+  \]
+\end{enumerate}
+
+Now set $\widetilde{F}(u) := G(u) - c_{t+1} u^{-\delta}(1-u)^M$. We check its sign at all six points:
+\begin{itemize}
+  \item $\widetilde{F}(u_0) < 0$ for sufficiently small $u_0 \in (0, u_1)$, since $G(u) \to C_1$ while $-c_{t+1} u^{-\delta}(1-u)^M \to -\infty$.
+  \item $\widetilde{F}(u_1) > 0$ and $\widetilde{F}(u_2) > 0$ by Step~5.
+  \item $\widetilde{F}(u_B) < 0$ and $\widetilde{F}(u_3) < 0$ because $c_{t+1} > L_{\max}$ and $u_B^{-\delta}, u_3^{-\delta} > 1$.
+  \item $\widetilde{F}(u_C) > 0$ because $G(u_C) \ge C_1/2$ while $c_{t+1} u_C^{-\delta}(1-u_C)^M < C_1 \cdot 2 \cdot \frac{1}{8} = C_1/4$.
+\end{itemize}
+By the Intermediate Value Theorem, $\widetilde{F}$ has at least three new zeros: $r_a \in (u_0, u_1)$, $r_b \in (u_2, u_B)$, and $r_c \in (u_3, u_C)$.
+
+\emph{Direct proof of simplicity (no Sard's theorem).} At \emph{any} zero $r \in (0, 1)$ of $\widetilde{F}(r) = 0$, substituting $c_{t+1} r^{-\delta}(1-r)^M = G(r)$ into $\widetilde{F}'(r)$ gives the exact identity
+\[
+  \widetilde{F}'(r) = G'(r) + G(r)\!\left(\frac{\delta}{r} + \frac{M}{1 - r}\right).
+\]
+Using~\eqref{eq:G_bounds}--\eqref{eq:Gp_bounds} on the three disjoint subintervals:
+\begin{itemize}
+  \item For $r = r_a \in (0, u_1)$: $r^\gamma < \delta/(6A)$, so $\delta/r > 6 A r^{\gamma-1}$ and
+  \[
+    \widetilde{F}'(r_a) > -\frac{3}{2}\gamma C_2 r_a^{\gamma-1} + \frac{C_1}{2}\cdot 6 A r_a^{\gamma-1} = \frac{3}{2}\gamma C_2 r_a^{\gamma-1} > 0.
+  \]
+  \item For $r = r_b \in (u_2, u_B)$: $r^\gamma > 8\delta/A$ gives $\delta/r < \frac{A}{8} r^{\gamma-1}$, while $r^{1-\gamma} < A/(16 M)$ and $1 - r > \frac{1}{2}$ give $M/(1-r) < 2 M < \frac{A}{8} r^{\gamma-1}$. Since $G(r_b) \le C_1$,
+  \[
+    \widetilde{F}'(r_b) < -\frac{1}{2}\gamma C_2 r_b^{\gamma-1} + C_1 \cdot \frac{A}{4} r_b^{\gamma-1} = -\frac{1}{4}\gamma C_2 r_b^{\gamma-1} < 0.
+  \]
+  \item For $r = r_c \in (u_3, u_C)$: $r^{1-\gamma} > 4A/M$ gives $M/(1-r) > M > 4 A r^{\gamma-1}$, hence
+  \[
+    \widetilde{F}'(r_c) > -\frac{3}{2}\gamma C_2 r_c^{\gamma-1} + \frac{C_1}{2}\cdot 4 A r_c^{\gamma-1} = \frac{1}{2}\gamma C_2 r_c^{\gamma-1} > 0.
+  \]
+\end{itemize}
+Thus $r_a < r_b < r_c$ are all strictly simple zeros of $\widetilde{F}$ in $(0, u_C)$.
+
+Finally, for every $u \in [u_C, 1)$, we have $c_{t+1} u^{-\delta} < 2 C_1$, $(1-u)^M \le (1-u_C)^M$, and $(1-u)^M \frac{M}{1-u} = M(1-u)^{M-1} \le (1-u_C)^M \frac{M}{1-u_C}$, so by Step~3,
+\[
+  |\widetilde{F}(u) - G(u)| \le 2 C_1 (1 - u_C)^M < \varepsilon, \qquad
+  |\widetilde{F}'(u) - G'(u)| \le 2 C_1 (1 - u_C)^M \!\left(\frac{1}{u_C} + \frac{M}{1 - u_C}\right) < \varepsilon.
+\]
+By Step~2, all $R$ old simple zeros persist as distinct simple zeros of $\widetilde{F}$ in $(u_C, 1)$, giving $R + 3$ strictly increasing simple zeros in $(0, 1)$ altogether. The two smallest $u$-exponents of $\widetilde{F}$ are $-\delta < 0$ (coefficients $-c_{t+1} < 0$ and $C_1 > 0$) with gap $\delta \in (0, \tfrac{1}{16})$.
+\end{proof}
+
+\begin{theorem}\label{thm:main}
+For every integer $t \ge 3$, there exist bivariate integer polynomials $f, g \in \Z[x, y]$ where $f$ has $3$ distinct monomials and $g$ has $t$ distinct monomials (all with nonzero integer coefficients) such that the system $f(x, y) = g(x, y) = 0$ has at least $3t - 4$ nondegenerate ($\det J \neq 0$) strictly positive solutions in $\R_{>0}^2$. In particular,
+\[
+  \Sfn(3, t) \ge 3t - 4 \qquad (\forall\, t \ge 3).
+\]
+\end{theorem}
+
+\begin{proof}
+We proceed by induction on $t \ge 2$ for the existence of a $t$-term rational-exponent function $F_t$ satisfying the hypotheses of Lemma~\ref{lem:insert} with $R_t = 3t - 4$ simple zeros in $(0, 1)$.
+
+For the base case $t = 2$ ($R_2 = 2$), take
+\[
+  F_2(u) = -1 + 2\, u^{1/32}(1-u)^{1/32}.
+\]
+Its zeros in $(0, 1)$ are $u = \frac{1}{2}\big(1 \pm \sqrt{1 - 2^{-30}}\big)$, both simple since $F_2'(u) = \frac{1}{16} u^{-31/32}(1-u)^{-31/32}(1 - 2u) \neq 0$ at $u \neq \frac{1}{2}$, and its $u$-exponents are $\alpha_1 = 0 < \alpha_2 = \frac{1}{32}$ with gap $\gamma = \frac{1}{32} \in (0, \frac{1}{16})$ and opposite-sign coefficients $c_1 = -1$, $c_2 = 2$.
+
+Applying Lemma~\ref{lem:insert} inductively $t - 2$ times yields a $t$-term rational-exponent function $F_t$ with $2 + 3(t - 2) = 3t - 4$ simple zeros in $(0, 1)$. Clearing the common denominator $D$ of the rational exponents, clearing negative exponents via $x^P y^Q$, and clearing rational denominators of the coefficients produces $f, g \in \Z[x, y]$ of type $(3, t)$ with $3t - 4$ strictly positive solutions in $\R_{>0}^2$, each nondegenerate by~\eqref{eq:jac}.
+\end{proof}
+
+\begin{remark}
+Applying Lemma~\ref{lem:insert} once to $F_2$ gives an elementary proof of Haas's $t = 3$ record $\Sfn(3, 3) \ge 5$. Moreover, because the $u \leftrightarrow 1 - u$ symmetry preserves the family~\eqref{eq:Fu}, one may also insert boundary poles alternately at $u \to 0^+$ and $u \to 1^-$; as shown next, inserting one pole at each endpoint produces a remarkably compact symmetric $(3, 4)$ system of degree only $45$.
+\end{remark}
+
+\section{Explicit Machine-Certified Low-Degree Integer Systems}
+
+\begin{theorem}[Explicit Degree-45 Eight-Root $(3, 4)$ System]\label{thm:deg45}
+The bivariate integer polynomial system
+\begin{equation}\label{eq:deg45}
+  f_1(x, y) = x^8 + y^8 - 1 = 0, \qquad
+  f_2(x, y) = 8 x^{45} + 8 y^{45} + 35 x^3 y^3 - 25 x y = 0
+\end{equation}
+consists of a trinomial of degree $8$ and a tetranomial of degree $45$, and possesses exactly $8$ strictly positive real solutions in $\R_{>0}^2$, all simple and symmetric under $(x, y) \mapsto (y, x)$.
+\end{theorem}
+
+\begin{proof}[Certification Summary]
+Beyond the Lean~4.36.0 formal proof of the lower bound ($\ge 8$ distinct positive solutions) described in Section~\ref{sec:lean}, we provide three independent computational certifications of Theorem~\ref{thm:deg45}:
+
+\smallskip
+\noindent\textbf{Pillar 1 (Zero-Float Exact \texttt{BigInt} Interval IVT Proof).}
+Along $f_1 = 0$ in $\R_{>0}^2$, write $y(x) = (1 - x^8)^{1/8}$ for $x \in (0, 1)$ and $g(x) = f_2(x, y(x))$. Consider the $9$ strictly ascending rational numbers
+\[
+  (x_0, \dots, x_8) = \left(\frac{3}{10},\; \frac{1}{2},\; \frac{3}{4},\; \frac{21}{25},\; \frac{917}{1000},\; \frac{193}{200},\; \frac{197}{200},\; \frac{499}{500},\; \frac{19999}{20000}\right).
+\]
+For each $x_k$, using purely exact arbitrary-precision integer arithmetic (\texttt{num-bigint}, zero floating-point instructions), we compute dyadic rationals $0 < \underline{y}_k < \overline{y}_k$ with denominator $2^{64}$ satisfying $\underline{y}_k^8 < 1 - x_k^8 < \overline{y}_k^8$. Since $8 y^{45} + 35 x^3 y^3$ is strictly increasing in $y > 0$ and $-25 x y$ is strictly decreasing in $y > 0$,
+\[
+  8 x_k^{45} + 8 \underline{y}_k^{45} + 35 x_k^3 \underline{y}_k^3 - 25 x_k \overline{y}_k
+  < g(x_k) <
+  8 x_k^{45} + 8 \overline{y}_k^{45} + 35 x_k^3 \overline{y}_k^3 - 25 x_k \underline{y}_k.
+\]
+In $0.000\text{ s}$, exact integer evaluation certifies that the lower and upper bounds share the same nonzero sign at all $9$ points, alternating strictly as $(+, -, +, -, +, -, +, -, +)$. By the Intermediate Value Theorem,~\eqref{eq:deg45} has at least $8$ distinct positive solutions.
+
+\smallskip
+\noindent\textbf{Pillar 2 (Direct 2D Certified Polynomial System Solve via \texttt{pandsysroots v0.33.0}).}
+Feeding~\eqref{eq:deg45} directly to the certified multivariate polynomial system solver \texttt{pandsysroots v0.33.0}~\cite{pandsysroots} completes in $0.08\text{ s}$ and certifies all $360/360$ complex solutions (B\'ezout bound $8 \times 45 = 360$, \texttt{certified = 360}, $14$ real solutions total). Filtering by $x - r > 0$ and $y - r > 0$ isolates \emph{exact $8$ strictly positive real solutions} (\texttt{certified = true}, \texttt{real = Some(true)}), pairwise disjoint with ball radii $r \le 3.05 \times 10^{-13}$.
+
+\smallskip
+\noindent\textbf{Pillar 3 (Independent 200-Digit Verification in \texttt{mpmath}).}
+An independent Python script (\texttt{verify\_records.py}) refines all $8$ solutions by two-dimensional Newton iteration at $200$-digit precision, achieving $\max(|f_1(x, y)|, |f_2(x, y)|) \le 1.6 \times 10^{-199}$, minimum pairwise separation $0.03376$, and $|\det J(x, y)| \ge 6.256$ at every root (Table~\ref{tab:roots8}).
+\end{proof}
+
+\begin{table}[h]
+\centering
+\caption{The $8$ certified strictly positive solutions of~\eqref{eq:deg45} (symmetric pairs $(x, y)$ and $(y, x)$).}
+\label{tab:roots8}
+\begin{tabular}{@{}rccc@{}}
+\toprule
+$k$ & $x_k$ & $y_k$ & $\det J(x_k, y_k)$ \\
+\midrule
+$0$ & $0.4270955605997323419690411\dots$ & $0.9998615410846015672829307\dots$ & $+54.13415$ \\
+$1$ & $0.6568049879124778027592965\dots$ & $0.9956038095620326995273252\dots$ & $-23.06477$ \\
+$2$ & $0.8210675245233927023804006\dots$ & $0.9714931815128327863924294\dots$ & $+6.25665$ \\
+$3$ & $0.8527505311403876970144148\dots$ & $0.9598311261934146491066845\dots$ & $-6.33869$ \\
+$4$ & $0.9598311261934146491066845\dots$ & $0.8527505311403876970144148\dots$ & $+6.33869$ \\
+$5$ & $0.9714931815128327863924294\dots$ & $0.8210675245233927023804006\dots$ & $-6.25665$ \\
+$6$ & $0.9956038095620326995273252\dots$ & $0.6568049879124778027592965\dots$ & $+23.06477$ \\
+$7$ & $0.9998615410846015672829307\dots$ & $0.4270955605997323419690411\dots$ & $-54.13415$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Applying Lemma~\ref{lem:insert} once (at $u \to 0^+$) and twice (symmetrically at $u \to 0^+$ and $u \to 1^-$) to~\eqref{eq:deg45} with $x = X^8$, $y = Y^8$, $\delta = \frac{1}{64}$, $M = 12000$, and $c_{t+1} = 3$ immediately yields explicit integer record systems for $t = 5$ and $t = 6$:
+
+\begin{proposition}[Explicit Integer Records for $(3, 5)$ and $(3, 6)$]\label{prop:t5t6}
+\begin{enumerate}
+  \item The type $(3, 5)$ integer system (trinomial + pentanomial)
+  \[
+    X^{64} + Y^{64} - 1 = 0, \qquad
+    8 X^{361} + 8 X Y^{360} + 35 X^{25} Y^{24} - 25 X^9 Y^8 - 3 Y^{768000} = 0
+  \]
+  has at least $11$ strictly positive real solutions in $\R_{>0}^2$ (improving Gomez--Niles--Rojas's $9$ by $+2$).
+  \item The symmetric type $(3, 6)$ integer system (trinomial + hexanomial)
+  \begin{align*}
+    X^{64} + Y^{64} - 1 &= 0, \\
+    8 X^{361} Y + 8 X Y^{361} + 35 X^{25} Y^{25} - 25 X^9 Y^9 - 3 X^{768001} - 3 Y^{768001} &= 0
+  \end{align*}
+  has at least $14$ strictly positive real solutions in $\R_{>0}^2$ (improving Gomez--Niles--Rojas's $11$ by $+3$).
+\end{enumerate}
+\end{proposition}
+
+Both systems in Proposition~\ref{prop:t5t6} are verified in \texttt{verify\_records.py} at $200$-digit precision via $12$ and $15$ strictly alternating sign points, respectively, with minimum sign-change magnitudes exceeding $7.6 \times 10^{-3}$.
+
+\section{Formal Verification in Lean~4.36.0}\label{sec:lean}
+
+To eliminate any possibility of subtle analytic, algebraic, or numerical gaps, we formally certified both Theorem~\ref{thm:main} and Theorem~\ref{thm:deg45} in \textbf{Lean~4.36.0} (\texttt{leanprover/lean4:v4.36.0}) against \texttt{Mathlib4} (commit \texttt{fc4f59e577feb1a4956671bc04ac18aaaf8cd842}). The self-contained Lean package is included in the \texttt{lean/} directory of the accompanying v1.1.0 release archive ($2{,}404$ lines total):
+
+\begin{itemize}
+  \item \texttt{Fewnomial/Deg45.lean} ($262$ lines):\\
+  Proves \texttt{Fewnomial.Deg45.explicit\_deg45\_eight\_positive\_roots} by exact rational bracket evaluation via \texttt{norm\_num}, monotonicity in $y$, the Intermediate Value Theorem on four disjoint intervals in $(0, \tfrac{917}{1000})$, and $(x, y) \leftrightarrow (y, x)$ symmetry.
+  \item \texttt{Fewnomial/InfiniteTheorem.lean} ($2{,}125$ lines):\\
+  Proves \texttt{Fewnomial.InfiniteTheorem.fewnomial\_lower\_bound\_3t\_minus\_4} for every $t \ge 3$:
+  \begin{itemize}
+    \item Defines bivariate integer polynomials directly as \texttt{List ($\Z \times \mathbb{N} \times \mathbb{N}$)} with predicate \texttt{ValidFewnomial k p} asserting exact length $k$, all coefficients nonzero, and pairwise distinct exponent pairs (\texttt{Nodup});
+    \item Proves the $C^1$ simple-root persistence lemma (\texttt{persist\_simple\_roots}), the base case $F_2(u) = -1 + 2 u^{1/32}(1-u)^{1/32}$ (\texttt{baseCase}), and the Sard-free $+3$ boundary-pole insertion step (\texttt{stepInsert\_exists});
+    \item Clears rational exponent denominators, negative exponents, and rational coefficient denominators to produce explicit $f, g \in \Z[x, y]$ of type $(3, t)$, and verifies $\det J(x_k, y_k) = f_x g_y - f_y g_x \neq 0$ at every root via the exact chain rule~\eqref{eq:jac}.
+  \end{itemize}
+  \item \texttt{Fewnomial/Audit.lean} ($15$ lines): Independently runs \texttt{\#check} and \texttt{\#print axioms} on both main theorems.
+\end{itemize}
+
+Running \texttt{lake build Fewnomial} followed by \texttt{lake env lean Fewnomial/Audit.lean} completes cleanly with zero \texttt{sorry}, zero \texttt{admit}, zero custom axioms, and zero \texttt{native\_decide}, reporting:
+\begin{verbatim}
+'Fewnomial.Deg45.explicit_deg45_eight_positive_roots'
+  depends on axioms: [propext, Classical.choice, Quot.sound]
+'Fewnomial.InfiniteTheorem.fewnomial_lower_bound_3t_minus_4'
+  depends on axioms: [propext, Classical.choice, Quot.sound]
+\end{verbatim}
+
+\section{Reproducibility and Open Questions}
+
+The complete standalone verification bundle (\texttt{fewnomial-3t-4-record-v1.1.0.tar.gz}) reproduces both the Lean~4.36.0 formal proofs and all three numerical/exact certification pillars via:
+\begin{verbatim}
+# Lean 4.36.0 formal proofs of Theorem 1 (all t >= 3) & Theorem 2
+cd lean && lake build Fewnomial && lake env lean Fewnomial/Audit.lean
+
+# Computational pillars (< 1 second total)
+cargo run --release       # BigInt IVT + pandsysroots v0.33.0
+python3 verify_records.py # 200-digit mpmath (t = 4, 5, 6)
+\end{verbatim}
+
+It remains a compelling open problem whether $\Sfn(3, 4)$ can exceed $8$ (the current gap is $8 \le \Sfn(3, 4) \le 11$), and more broadly whether $\Sfn(3, t)$ grows linearly or superlinearly in $t$.
+
+\begin{thebibliography}{10}
+
+\bibitem{Bihan26}
+F.~Bihan,
+\emph{Descartes' rule of signs for arbitrary fewnomial systems},
+arXiv:2610.06435 (2026).
+
+\bibitem{BS07}
+F.~Bihan and F.~Sottile,
+\emph{New fewnomial upper bounds from Gale dual polynomial systems},
+Mosc. Math. J. \textbf{7} (2007), no.~3, 387--407.
+
+\bibitem{EH18}
+B.~El Hilany,
+\emph{Constructing polynomial systems with many positive solutions using tropical geometry},
+Rev. Mat. Complut. \textbf{31} (2018), 525--544 (arXiv:1703.02272).
+
+\bibitem{EHT24}
+B.~El Hilany and S.~Tavenas,
+\emph{Improved fewnomial upper bounds from Wronskians and dessins d'enfant},
+arXiv:2409.01651 (2024).
+
+\bibitem{GNR07}
+J.~Gomez, A.~Niles, and J.~M.~Rojas,
+\emph{New complexity bounds for certain real fewnomial zero sets},
+arXiv:0709.2405 (2007).
+
+\bibitem{Haas02}
+B.~Haas,
+\emph{A simple counterexample to Kouchnirenko's conjecture},
+Beitr\"age Algebra Geom. \textbf{43} (2002), no.~1, 1--8.
+
+\bibitem{Khovanskii91}
+A.~G.~Khovanskii,
+\emph{Fewnomials},
+Translations of Mathematical Monographs, vol.~88, AMS, Providence, RI, 1991.
+
+\bibitem{KPT15}
+P.~Koiran, N.~Portier, and S.~Tavenas,
+\emph{On the intersection of a sparse curve and a low-degree curve: A polynomial version of the lost theorem},
+Discrete Comput. Geom. \textbf{53} (2015), 48--63.
+
+\bibitem{LRW03}
+T.-Y.~Li, J.~M.~Rojas, and X.~Wang,
+\emph{Counting real connected components of trinomial curve intersections and $m$-nomial hypersurfaces},
+Discrete Comput. Geom. \textbf{30} (2003), 379--414.
+
+\bibitem{pandsysroots}
+I.~Besevic,
+\emph{\texttt{pandsysroots}: Certified multivariate polynomial system root solver in Rust (v0.33.0)},
+\url{https://crates.io/crates/pandsysroots} (2026).
+
+\end{thebibliography}
+
+\end{document}
